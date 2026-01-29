@@ -1,0 +1,87 @@
+/* RESET */
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ENG MUHIMI: markazga tortishni o‘chiradi */
+body {
+  display: block !important;
+  min-height: auto !important;
+}
+
+/* root hech qachon markazga tortmasin */
+#root {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+
+/* wrapper markazda va to‘liq */
+.page-wrap {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1px 16px; /* chetdan ozgina masofa */
+}
+
+/* jadval card */
+.table-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* jadval gorizontal scroll uchun normal */
+.table-scroll {
+  width: 100%;
+}
+
+/* jadval doim wrapperni to‘ldirsin */
+.tasks-table {
+  width: 100%;
+  min-width: 1200px; /* 8 ta ustun uchun minimum, xohlasang 1100 */
+}
+
+/* Sticky: 1-ustun (Title) chapda turib qoladi */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 2;
+}
+
+/* Sticky header ustunlari ustida tursin */
+.tasks-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* Sticky col header ham tepada qolishi */
+.tasks-table thead th.sticky-col {
+  z-index: 4;
+}
+
+/* Uzun textlarni chiroyli qilish */
+.truncate {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+
+.datepicker-popper {
+  z-index: 99999 !important;
+}
+
+.react-datepicker {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  border-radius: 10px;
+}
