@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import "./App.css"
 import { getTasks, getGroups, getUsers, getStages } from "./api/tasksApi"
 import Select from "react-select"
 import "react-datepicker/dist/react-datepicker.css"
 import DatePicker from "react-datepicker"
-
 
 type Task = {
   title: string
@@ -70,6 +69,15 @@ export default function App() {
     created_to: "",
   })
 
+  const executorOptions = useMemo(
+    () =>
+      users.map((u) => ({
+        value: u.id,
+        label: u.full_name,
+      })),
+    [users]
+  )
+
   const setField = (name: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [name]: value }))
   }
@@ -90,7 +98,7 @@ export default function App() {
       setLoading(true)
       setError(null)
       const data = await getTasks(buildParams(f))
-      setTasks(data)
+      setTasks(data as Task[])
     } catch (e) {
       setError("API ulanib bo‘lmadi")
       console.error(e)
@@ -123,169 +131,155 @@ export default function App() {
     loadOptions()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const executorOptions = users.map(u => ({
-  value: u.id,
-  label: u.full_name
-}))
 
   return (
     <div className="container-fluid p-0">
-      {/* ✅ Markazdagi wrapper */}
       <div className="page-wrap">
+        {/* Header */}
         <div className="d-flex align-items-center justify-content-between mb-3">
-          <h2 className="m-0"></h2>
-          <div className="text-muted small">
-            {loading ? "Loading..." : `Count: ${tasks.length}`}
-          </div>
+          <h2 className="m-0 page-title"></h2>
+          <div className="text-muted small">{loading ? "Loading..." : `Count: ${tasks.length}`}</div>
         </div>
 
         {/* Filters */}
-      <div className="card border-0 shadow-sm mb-3 w-100">
-        <div className="card-body">
-          {/* 1-QATOR: filterlar */}
-          <div className="row g-3 align-items-end">
-            {/* Group */}
-            <div className="col-12 col-md-2">
-              <label className="form-label">Группа</label>
-              <select
-                className="form-select"
-                value={filters.group_id}
-                onChange={(e) => setField("group_id", e.target.value)}
-              >
-                <option value="">Все</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.title}
-                  </option>
-                ))}
-              </select>
+        <div className="card border-0 shadow-sm mb-3 w-100">
+          <div className="card-body">
+            <div className="row g-3 align-items-end">
+              {/* Group */}
+              <div className="col-12 col-md-3 col-lg-2">
+                <label className="form-label">Группа</label>
+                <select
+                  className="form-select"
+                  value={filters.group_id}
+                  onChange={(e) => setField("group_id", e.target.value)}
+                >
+                  <option value="">Все</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Executor */}
+              <div className="col-12 col-md-5 col-lg-3">
+                <label className="form-label">Исполнитель</label>
+                <Select
+                  options={executorOptions}
+                  isClearable
+                  placeholder="Search executor..."
+                  value={executorOptions.find((o) => String(o.value) === filters.executor_id) || null}
+                  onChange={(opt) => setField("executor_id", opt ? String(opt.value) : "")}
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  styles={{
+                    container: (base) => ({ ...base, width: "100%" }),
+                    control: (base) => ({ ...base, minHeight: "38px" }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    menu: (base) => ({ ...base, zIndex: 9999 }),
+                  }}
+                />
+              </div>
+
+              {/* Stage */}
+              <div className="col-12 col-md-4 col-lg-2">
+                <label className="form-label">Статус</label>
+                <select
+                  className="form-select"
+                  value={filters.stage_title}
+                  onChange={(e) => setField("stage_title", e.target.value)}
+                >
+                  <option value="">Все</option>
+                  {stages.map((s, idx) => (
+                    <option key={`${s.title}-${idx}`} value={s.title}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Created from */}
+              <div className="col-12 col-sm-6 col-lg-2">
+                <label className="form-label">Создано с</label>
+                <DatePicker
+                  selected={filters.created_from ? new Date(filters.created_from) : null}
+                  onChange={(date: Date | null) =>
+                    setField("created_from", date ? date.toISOString().slice(0, 10) : "")
+                  }
+                  dateFormat="dd.MM.yyyy"
+                  placeholderText="дд.мм.гггг"
+                  className="form-control"
+                  isClearable
+                  showPopperArrow={false}
+                  popperPlacement="bottom-start"
+                  portalId="root-portal"
+                  popperClassName="datepicker-popper"
+                />
+              </div>
+
+              {/* Created to */}
+              <div className="col-12 col-sm-6 col-lg-2">
+                <label className="form-label">Создано до</label>
+                <DatePicker
+                  selected={filters.created_to ? new Date(filters.created_to) : null}
+                  onChange={(date: Date | null) =>
+                    setField("created_to", date ? date.toISOString().slice(0, 10) : "")
+                  }
+                  dateFormat="dd.MM.yyyy"
+                  placeholderText="дд.мм.гггг"
+                  className="form-control"
+                  isClearable
+                  showPopperArrow={false}
+                  popperPlacement="bottom-start"
+                  portalId="root-portal"
+                  popperClassName="datepicker-popper"
+                />
+              </div>
             </div>
 
-            {/* Executor */}
-            <div className="col-12 col-md-3">
-              <label className="form-label">Исполнитель</label>
-              <Select
-                options={executorOptions}
-                isClearable
-                placeholder="Search executor..."
-                value={
-                  executorOptions.find((o) => String(o.value) === filters.executor_id) ||
-                  null
-                }
-                onChange={(opt) => setField("executor_id", opt ? String(opt.value) : "")}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
-                styles={{
-                  container: (base) => ({ ...base, width: "100%" }),
-                  control: (base) => ({ ...base, minHeight: "38px" }),
-                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                  menu: (base) => ({ ...base, zIndex: 9999 }),
+            {/* Buttons */}
+            <div className="d-flex flex-wrap justify-content-start gap-2 mt-3">
+              <button className="btn btn-primary px-4" onClick={() => loadTasks()}>
+                Применить
+              </button>
+
+              <button
+                className="btn btn-outline-secondary px-4"
+                onClick={() => {
+                  const cleared: Filters = {
+                    group_id: "",
+                    executor_id: "",
+                    stage_title: "",
+                    created_from: "",
+                    created_to: "",
+                  }
+                  setFilters(cleared)
+                  loadTasks(cleared)
                 }}
-              />
-            </div>
-
-            {/* Stage */}
-            <div className="col-12 col-md-2">
-              <label className="form-label">Этап</label>
-              <select
-                className="form-select"
-                value={filters.stage_title}
-                onChange={(e) => setField("stage_title", e.target.value)}
               >
-                <option value="">Все</option>
-                {stages.map((s, idx) => (
-                  <option key={`${s.title}-${idx}`} value={s.title}>
-                    {s.title}
-                  </option>
-                ))}
-              </select>
+                Очистить
+              </button>
             </div>
-
-            {/* Created from */}
-            <div className="col-12 col-md-2">
-              <label className="form-label">Создано с</label>
-              <DatePicker
-                selected={filters.created_from ? new Date(filters.created_from) : null}
-                onChange={(date: Date | null) =>
-                  setField("created_from", date ? date.toISOString().slice(0, 10) : "")
-                }
-                dateFormat="dd.MM.yyyy"
-                placeholderText="дд.мм.гггг"
-                className="form-control"
-                isClearable
-                showPopperArrow={false}
-                popperPlacement="bottom-start"
-
-                /* MUHIM QISMLAR */
-                portalId="root-portal"
-                popperClassName="datepicker-popper"
-              />
-            </div>
-
-            {/* Created to */}
-            <div className="col-12 col-md-2">
-              <label className="form-label">Создано до</label>
-              <DatePicker
-                selected={filters.created_to ? new Date(filters.created_to) : null}
-                onChange={(date: Date | null) =>
-                  setField("created_to", date ? date.toISOString().slice(0, 10) : "")
-                }
-                dateFormat="dd.MM.yyyy"
-                placeholderText="дд.мм.гггг"
-                className="form-control"
-                isClearable
-                showPopperArrow={false}
-                popperPlacement="bottom-start"
-
-                portalId="root-portal"
-                popperClassName="datepicker-popper"
-              />
-            </div>
-          </div>
-
-          {/* 2-QATOR: tugmalar pastda, o‘ngda */}
-          <div className="d-flex justify-content-start gap-2 mt-3">
-            <button className="btn btn-primary px-4" onClick={() => loadTasks()}>
-              Применить
-            </button>
-
-            <button
-              className="btn btn-outline-secondary px-4"
-              onClick={() => {
-                const cleared: Filters = {
-                  group_id: "",
-                  executor_id: "",
-                  stage_title: "",
-                  created_from: "",
-                  created_to: "",
-                }
-                setFilters(cleared)
-                loadTasks(cleared)
-              }}
-            >
-              Очистить
-            </button>
           </div>
         </div>
-      </div>
 
         {error && <div className="alert alert-danger">{error}</div>}
 
-        {/* ✅ Table (to‘liq kenglik + bo‘sh joy yo‘q) */}
-        <div className="card border-0 shadow-sm table-card w-100">
+        {/* ✅ Desktop table */}
+        <div className="card border-0 shadow-sm table-card w-100 d-none d-lg-block">
           <div className="table-scroll">
             <table className="table table-hover align-middle mb-0 tasks-table">
               <thead className="table-light">
                 <tr>
-                  {/* sticky title column */}
                   <th className="sticky-col" style={{ minWidth: 320 }}>
                     Название
                   </th>
                   <th style={{ minWidth: 170 }}>Создано</th>
                   <th style={{ minWidth: 170 }}>Срок</th>
                   <th style={{ minWidth: 170 }}>Закрыто</th>
-                  <th style={{ minWidth: 160 }}>Stage</th>
-                  <th style={{ minWidth: 200 }}>Этап</th>
+                  <th style={{ minWidth: 160 }}>Статус</th>
+                  <th style={{ minWidth: 200 }}>Группа</th>
                   <th style={{ minWidth: 240 }}>Создатель</th>
                   <th style={{ minWidth: 220 }}>Исполнитель</th>
                 </tr>
@@ -314,9 +308,7 @@ export default function App() {
                       <td title={t.closed_date ?? ""}>{formatDateTime(t.closed_date)}</td>
 
                       <td title={t.stage ?? ""}>
-                        <span className={`badge ${stageBadgeClass(t.stage)}`}>
-                          {t.stage ?? "—"}
-                        </span>
+                        <span className={`badge ${stageBadgeClass(t.stage)}`}>{t.stage ?? "—"}</span>
                       </td>
 
                       <td title={t.group ?? ""}>
@@ -351,7 +343,101 @@ export default function App() {
           </div>
         </div>
 
-        <div className="py-3" />
+        {/* ✅ Mobile cards */}
+        <div className="d-block d-lg-none">
+          {loading && <div className="card border-0 shadow-sm p-3 text-center">Загрузка...</div>}
+
+          {!loading && tasks.length === 0 && (
+            <div className="card border-0 shadow-sm p-3 text-center text-muted">Нет задач</div>
+          )}
+
+          {!loading &&
+            tasks.map((t, i) => (
+              <div key={i} className="card border-0 shadow-sm task-card mb-3">
+                <div className="card-body">
+                  {/* Title + Stage badge */}
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <div className="fw-semibold task-title">{t.title}</div>
+                    <span className={`badge ${stageBadgeClass(t.stage)}`}>
+                      {t.stage ?? "—"}
+                    </span>
+                  </div>
+
+                  <div className="task-meta mt-2">
+                    <div className="row g-2">
+
+                      {/* 1. Название */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Название:</span>
+                          <span className="meta-value">{t.title}</span>
+                        </div>
+                      </div>
+
+                      {/* 2. Создано */}
+                      <div className="col-6">
+                        <div className="meta-item">
+                          <span className="meta-label">Создано:</span>
+                          <span className="meta-value">{formatDateTime(t.created_date)}</span>
+                        </div>
+                      </div>
+
+                      {/* 3. Статус (deadline) */}
+                      <div className="col-6">
+                        <div className="meta-item">
+                          <span className="meta-label">Срок:</span>
+                          <span className="meta-value">{formatDateTime(t.deadline)}</span>
+                        </div>
+                      </div>
+
+                      {/* 4. Закрыто */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Закрыто:</span>
+                          <span className="meta-value">{formatDateTime(t.closed_date)}</span>
+                        </div>
+                      </div>
+
+                      {/* 5. Stage */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Статус:</span>
+                          <span className="meta-value">{t.stage ?? "—"}</span>
+                        </div>
+                      </div>
+
+                      {/* 6. Этап (Group) */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Группа:</span>
+                          <span className="meta-value">{t.group ?? "—"}</span>
+                        </div>
+                      </div>
+
+                      {/* 7. Создатель */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Создатель:</span>
+                          <span className="meta-value">{t.creator ?? "—"}</span>
+                        </div>
+                      </div>
+
+                      {/* 8. Исполнитель */}
+                      <div className="col-12">
+                        <div className="meta-item">
+                          <span className="meta-label">Исполнитель:</span>
+                          <span className="meta-value">{t.executor ?? "—"}</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="py-2" />
       </div>
     </div>
   )
